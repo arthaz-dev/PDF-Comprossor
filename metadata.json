@@ -1,0 +1,5 @@
+{
+  "name": "PDF Compressor",
+  "description": "A web application to compress PDF files to under 2MB while maintaining the best possible quality.",
+  "requestFramePermissions": []
+}
