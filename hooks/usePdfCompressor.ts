@@ -1,9 +1,6 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { CompressionStatus } from '../types';
 import { compressPdfToTargetSize } from '../services/pdfCompressor';
-
-const TARGET_SIZE_BYTES = 2 * 1024 * 1024 * 0.98; // Just under 2MB
 
 export const usePdfCompressor = () => {
   const [status, setStatus] = useState<CompressionStatus>(CompressionStatus.Idle);
@@ -34,21 +31,27 @@ export const usePdfCompressor = () => {
     setError(null);
   }, [compressedPdfUrl]);
 
-  const compressPdf = useCallback(async (file: File) => {
+  const compressPdf = useCallback(async (file: File, targetSizeMB: number) => {
     reset();
-    setStatus(CompressionStatus.Processing);
     setOriginalSize(file.size);
 
-    if (file.size <= TARGET_SIZE_BYTES) {
-        setError("File is already under 2MB. No compression needed.");
+    const targetSizeBytes = targetSizeMB * 1024 * 1024;
+
+    if (targetSizeBytes >= file.size) {
+        const originalSizeMB = (file.size / 1024 / 1024).toFixed(2);
+        setError(`Target size (${targetSizeMB}MB) must be smaller than the original file size (${originalSizeMB}MB).`);
         setStatus(CompressionStatus.Error);
         return;
     }
 
+    setStatus(CompressionStatus.Processing);
+
+    const effectiveTargetSizeBytes = targetSizeBytes * 0.98; // Just under target MB
+
     try {
       const compressedPdfBytes = await compressPdfToTargetSize(
         file,
-        TARGET_SIZE_BYTES,
+        effectiveTargetSizeBytes,
         (p) => setProgress(p)
       );
       

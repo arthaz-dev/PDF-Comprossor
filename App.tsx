@@ -6,9 +6,11 @@ import ProcessingView from './components/ProcessingView';
 import ResultView from './components/ResultView';
 import { usePdfCompressor } from './hooks/usePdfCompressor';
 import { GithubIcon } from './components/icons';
-
+import CompressionConfigView from './components/CompressionConfigView';
 
 const App: React.FC = () => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
   const { 
     status, 
     progress, 
@@ -17,16 +19,23 @@ const App: React.FC = () => {
     compressedPdfUrl, 
     error,
     compressPdf,
-    reset
+    reset: resetCompressor
   } = usePdfCompressor();
 
-  const handleFileSelect = useCallback(async (file: File) => {
-    compressPdf(file);
-  }, [compressPdf]);
+  const handleFileSelect = useCallback((file: File) => {
+    setSelectedFile(file);
+  }, []);
+
+  const handleStartCompression = useCallback(async (targetSizeMB: number) => {
+    if (selectedFile) {
+      compressPdf(selectedFile, targetSizeMB);
+    }
+  }, [compressPdf, selectedFile]);
 
   const handleReset = useCallback(() => {
-    reset();
-  }, [reset]);
+    resetCompressor();
+    setSelectedFile(null);
+  }, [resetCompressor]);
 
   const renderContent = () => {
     switch (status) {
@@ -56,7 +65,18 @@ const App: React.FC = () => {
         );
       case CompressionStatus.Idle:
       default:
-        return <FileUpload onFileSelect={handleFileSelect} />;
+        if (selectedFile) {
+          return (
+            <CompressionConfigView 
+              file={selectedFile}
+              onCompress={handleStartCompression}
+              onCancel={handleReset}
+            />
+          );
+        }
+        return (
+          <FileUpload onFileSelect={handleFileSelect} />
+        );
     }
   };
 
@@ -66,7 +86,7 @@ const App: React.FC = () => {
         <header className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-100">PDF Compressor</h1>
           <p className="text-lg text-gray-400 mt-2">
-            Reduce PDF file size to under 2MB with the best possible quality.
+            Reduce PDF file size to your desired target with the best possible quality.
           </p>
         </header>
 

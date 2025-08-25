@@ -8,11 +8,23 @@ interface FileUploadProps {
 
 const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleFile = (file: File) => {
+    if (file.type === 'application/pdf') {
+      setError(null);
+      onFileSelect(file);
+    } else {
+      setError("Please upload a PDF file.");
+      setTimeout(() => setError(null), 3000);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      onFileSelect(e.target.files[0]);
+      handleFile(e.target.files[0]);
     }
+    e.target.value = '';
   };
 
   const handleDragEnter = useCallback((e: React.DragEvent<HTMLLabelElement>) => {
@@ -37,16 +49,12 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect }) => {
     e.stopPropagation();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        if(e.dataTransfer.files[0].type === 'application/pdf') {
-            onFileSelect(e.dataTransfer.files[0]);
-        } else {
-            alert("Please upload a PDF file.");
-        }
+      handleFile(e.dataTransfer.files[0]);
     }
   }, [onFileSelect]);
 
   return (
-    <div className="w-full text-center">
+    <div className="w-full">
       <label
         htmlFor="pdf-upload"
         className={`relative block w-full rounded-lg border-2 border-dashed ${
@@ -62,6 +70,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect }) => {
           Drag and drop a PDF file here
         </span>
         <span className="mt-1 block text-sm text-gray-500">or click to select a file</span>
+        {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
       </label>
       <input
         id="pdf-upload"
